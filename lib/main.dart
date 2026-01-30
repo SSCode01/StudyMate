@@ -9,6 +9,9 @@ import 'home/tasks/task_bloc.dart';
 import 'home/calendar/calendar_bloc.dart';
 import 'home/profile/profile_bloc.dart';
 import 'home/chat/chat_bloc.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

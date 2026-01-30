@@ -2,11 +2,20 @@ import 'dart:io';
 
 abstract class TodoNotesEvent {}
 
+
+// ---------- LOAD ----------
 class LoadTodos extends TodoNotesEvent {
   final String uid;
   LoadTodos(this.uid);
 }
 
+class LoadNotes extends TodoNotesEvent {
+  final String uid;
+  LoadNotes(this.uid);
+}
+
+
+// ---------- TODO CRUD ----------
 class AddTodo extends TodoNotesEvent {
   final String uid;
   final String title;
@@ -33,11 +42,8 @@ class ToggleTodo extends TodoNotesEvent {
   ToggleTodo(this.uid, this.id, this.value);
 }
 
-class LoadNotes extends TodoNotesEvent {
-  final String uid;
-  LoadNotes(this.uid);
-}
 
+// ---------- NOTE CRUD ----------
 class AddNote extends TodoNotesEvent {
   final String uid;
   final String text;
@@ -59,9 +65,41 @@ class DeleteNote extends TodoNotesEvent {
 
 class AddNoteWithAttachment extends TodoNotesEvent {
   final String uid;
-  final String? text;
-  final File file;
-  final String fileType; // image / pdf
+  final String text;
+  final dynamic file; // ✅ File (mobile) OR Uint8List (web)
+  final String fileType;
 
   AddNoteWithAttachment(this.uid, this.text, this.file, this.fileType);
+}
+
+
+
+// ---------- SEARCH ----------
+class SearchChanged extends TodoNotesEvent {
+  final String query;
+  SearchChanged(this.query);
+}
+
+
+// ---------- FILTER ----------
+enum TodoStatusFilter { all, completed, pending }
+enum NotesContentFilter { all, withImage, textOnly }
+
+class FilterChanged extends TodoNotesEvent {
+  final TodoStatusFilter todoFilter;
+  final NotesContentFilter notesFilter;
+
+  FilterChanged({
+    required this.todoFilter,
+    required this.notesFilter,
+  });
+}
+
+
+// ---------- SORT ----------
+enum SortType { az, za, newest, oldest }
+
+class SortChanged extends TodoNotesEvent {
+  final SortType sortType;
+  SortChanged(this.sortType);
 }

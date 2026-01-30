@@ -17,6 +17,12 @@ import 'home/todo_notes/todo_notes_bloc.dart';
 import 'package:studymate/home/calendar/calendar_bloc.dart';
 import 'package:studymate/home/calendar/calendar_event.dart';
 import 'package:studymate/home/calendar/calendar_state.dart';
+import 'home/quotes/quotes_bloc.dart';
+import 'home/quotes/quotes_event.dart';
+import 'home/quotes/quotes_state.dart';
+import 'services/quote_service.dart';
+import 'package:flutter/foundation.dart';
+import 'home/quizzes/quiz_screen.dart';
 
 
 class HomeScreen extends StatelessWidget {
@@ -27,13 +33,18 @@ class HomeScreen extends StatelessWidget {
     return BlocBuilder<NavigationBloc, NavigationState>(
       builder: (context, navState) {
         final pages = [
-          const _HomeTab(),
+          BlocProvider(
+            create: (_) => QuotesBloc(QuoteService())..add(FetchQuotes()),
+            child: const _HomeTab(),
+          ),
+
           const _MaterialsTab(),
           const _ProfileTab(),
           const _CalendarTab(),
         ];
 
         return Scaffold(
+          backgroundColor: Colors.transparent,
           appBar: AppBar(
             iconTheme: const IconThemeData(color: Colors.white),
             title: const Text("Study Mate", style: TextStyle(color: Colors.white)),
@@ -82,26 +93,77 @@ class HomeScreen extends StatelessWidget {
               ],
             ),
           ),
-          body: Stack(
+          body: LayoutBuilder(
+            builder: (context, constraints) {
+          final isWide = constraints.maxWidth > 900;
+
+          return Stack(
             children: [
               Positioned.fill(
-                child: Image.asset('assets/bghp.png', fit: BoxFit.cover),
+                child: Image.asset(
+                  'assets/bghp.png',
+                  fit: BoxFit.cover,
+                ),
               ),
-              pages[navState.index],
+
+              if (isWide)
+                Row(
+                  children: [
+                    NavigationRail(
+                      selectedIndex: navState.index,
+                      onDestinationSelected: (i) {
+                        context.read<NavigationBloc>().add(NavigationEvent(i));
+                      },
+                      labelType: NavigationRailLabelType.all,
+                      destinations: const [
+                        NavigationRailDestination(icon: Icon(Icons.home), label: Text("Home")),
+                        NavigationRailDestination(icon: Icon(Icons.menu_book), label: Text("Materials")),
+                        NavigationRailDestination(icon: Icon(Icons.person), label: Text("Profile")),
+                        NavigationRailDestination(icon: Icon(Icons.calendar_month), label: Text("Calendar")),
+                      ],
+                    ),
+                    Expanded(child: pages[navState.index]),
+                  ],
+                )
+              else
+                pages[navState.index],
             ],
-          ),
-          bottomNavigationBar: BottomNavigationBar(
+          );
+        },
+        ),
+
+          bottomNavigationBar: kIsWeb
+              ? null
+              : BottomNavigationBar(
             currentIndex: navState.index,
-            onTap: (i) => context.read<NavigationBloc>().add(NavigationEvent(i)),
-            selectedItemColor: Colors.blue,
-            unselectedItemColor: Colors.grey,
+            onTap: (i) =>
+                context.read<NavigationBloc>().add(NavigationEvent(i)),
+
+            backgroundColor: const Color(0xFF4A2E1B),
+            selectedItemColor: Colors.white,
+            unselectedItemColor: Colors.white70,
+            type: BottomNavigationBarType.fixed,
+
             items: const [
-              BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-              BottomNavigationBarItem(icon: Icon(Icons.menu_book), label: 'Materials'),
-              BottomNavigationBarItem(icon: Icon(Icons.account_circle), label: 'Profile'),
-              BottomNavigationBarItem(icon: Icon(Icons.calendar_month), label: 'Calendar'),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.home),
+                label: 'Home',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.menu_book),
+                label: 'Materials',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.account_circle),
+                label: 'Profile',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.calendar_month),
+                label: 'Calendar',
+              ),
             ],
           ),
+
         );
       },
     );
@@ -113,46 +175,85 @@ class _HomeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final isWeb = width > 700;
     return BlocBuilder<TaskBloc, TaskState>(
       builder: (context, taskState) {
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            padding: const EdgeInsets.all(16),
+            child: Center(
+                child: SizedBox(
+                  width: isWeb ? 900 : double.infinity,
+                  child: Column(
+
+                  crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Card(
-                elevation: 6,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                color: Colors.orange.shade100,
-                child: const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text('"Consistency is the key to success. Study a little every day!"',
+              Align(
+                alignment: Alignment.center,
+                child: Card(
+                  elevation: 6,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  color: Colors.orange.shade100,
+                  child: const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text(
+                      '"Consistency is the key to success. Study a little every day!"',
                       style: TextStyle(fontSize: 18, fontStyle: FontStyle.italic),
-                      textAlign: TextAlign.center),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
                 ),
               ),
+
               const SizedBox(height: 20),
-              CarouselSlider(
-                options: CarouselOptions(height: 150, autoPlay: true, enlargeCenterPage: true),
-                items: [
-                  "Tip: Revise daily for 10 mins",
-                  "Reminder: Submit assignment by Friday",
-                  "Stay Hydrated 💧 while studying",
-                ].map((text) {
-                  return Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Text(text,
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                            textAlign: TextAlign.center),
-                      ),
-                    ),
-                  );
-                }).toList(),
+              BlocBuilder<QuotesBloc, QuotesState>(
+                builder: (context, state) {
+                  if (state is QuotesLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (state is QuotesLoaded) {
+                    return CarouselSlider(
+                      options: CarouselOptions(height: 150, autoPlay: true, enlargeCenterPage: true),
+                      items: state.quotes.map((q) {
+                        return Card(
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          child: Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Flexible(
+                                    child: SingleChildScrollView(
+                                      child: Text(
+                                        '"${q.content}"',
+                                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    "- ${q.author}",
+                                    style: const TextStyle(fontSize: 13, fontStyle: FontStyle.italic),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                          ),
+                        );
+                      }).toList(),
+                    );
+                  }
+
+                  return const Text("Failed to load quotes");
+                },
               ),
+
               const SizedBox(height: 20),
               const Text("Quick Access", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               const SizedBox(height: 10),
@@ -166,6 +267,7 @@ class _HomeTab extends StatelessWidget {
                   _qa(Icons.schedule, "Schedule"),
                   _qa(Icons.quiz, "Quizzes"),
                 ],
+
               ),
               const SizedBox(height: 20),
               const Text("Your Task Progress",
@@ -284,6 +386,8 @@ class _HomeTab extends StatelessWidget {
               ),
             ],
           ),
+                ),
+            ),
         );
       },
     );
@@ -295,7 +399,7 @@ class _HomeTab extends StatelessWidget {
       margin: const EdgeInsets.all(8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
-        onTap: () {},
+        onTap: () {}, // ✅ DEAD CARD
         borderRadius: BorderRadius.circular(12),
         child: Center(
           child: Column(
@@ -310,6 +414,7 @@ class _HomeTab extends StatelessWidget {
       ),
     );
   }
+
 }
 
 class _MaterialsTab extends StatelessWidget {
@@ -377,103 +482,151 @@ class _CalendarTabState extends State<_CalendarTab> {
 
   @override
   Widget build(BuildContext context) {
-    final uid = context.read<ProfileBloc>().state.user?.uid;
+    final uid = context
+        .read<ProfileBloc>()
+        .state
+        .user
+        ?.uid;
+
     return BlocBuilder<CalendarBloc, CalendarState>(
       builder: (context, cal) {
-        return Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: TableCalendar(
-                    firstDay: DateTime.utc(2020, 1, 1),
-                    lastDay: DateTime.utc(2030, 12, 31),
-                    focusedDay: focus,
-                    calendarFormat: f,
-                    selectedDayPredicate: (d) => isSameDay(sel, d),
-                    eventLoader: (day) => cal.events[DateTime.utc(day.year, day.month, day.day)] ?? [],
-                    onDaySelected: (s, fDay) {
-                      setState(() {
-                        sel = s;
-                        focus = fDay;
-                      });
-                    },
-                    onFormatChanged: (x) => setState(() => f = x),
-                    onPageChanged: (newFocus) {
-                      final start = DateTime(newFocus.year, newFocus.month, 1);
-                      final end = DateTime(newFocus.year, newFocus.month + 1, 0);
-                      if (uid != null) {
-                        context.read<CalendarBloc>().add(LoadCalendarRange(uid, start, end));
-                      }
-                      setState(() => focus = newFocus);
-                    },
+        return Container(
+          color: Colors.transparent,
+          child: Center(
+        child: SizedBox(
+        width: MediaQuery.of(context).size.width > 700 ? 900 : double.infinity,
+        child: SingleChildScrollView(
+
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: TableCalendar(
+                      firstDay: DateTime.utc(2020, 1, 1),
+                      lastDay: DateTime.utc(2030, 12, 31),
+                      focusedDay: focus,
+                      calendarFormat: f,
+                      selectedDayPredicate: (d) => isSameDay(sel, d),
+                      eventLoader: (day) =>
+                      cal.events[DateTime.utc(day.year, day.month, day.day)] ??
+                          [],
+                      onDaySelected: (s, fDay) {
+                        setState(() {
+                          sel = s;
+                          focus = fDay;
+                        });
+                      },
+                      onFormatChanged: (x) => setState(() => f = x),
+                      onPageChanged: (newFocus) {
+                        final start = DateTime(
+                            newFocus.year, newFocus.month, 1);
+                        final end = DateTime(
+                            newFocus.year, newFocus.month + 1, 0);
+                        if (uid != null) {
+                          context
+                              .read<CalendarBloc>()
+                              .add(LoadCalendarRange(uid, start, end));
+                        }
+                        setState(() => focus = newFocus);
+                      },
+                    ),
                   ),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text("Events", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      if (uid != null)
-                        ElevatedButton.icon(
-                          icon: const Icon(Icons.add),
-                          label: const Text("Add event"),
-                          onPressed: () {
-                            String x = "";
-                            showDialog(
-                              context: context,
-                              builder: (_) => AlertDialog(
-                                title: const Text("Add Event"),
-                                content: TextField(
-                                  autofocus: true,
-                                  onChanged: (v) => x = v,
-                                  decoration: const InputDecoration(hintText: "Event title"),
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(context),
-                                    child: const Text("Cancel"),
-                                  ),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      if (sel != null && x.trim().isNotEmpty) {
-                                        context.read<CalendarBloc>().add(
-                                          AddCalendarEvent(uid, sel!, x.trim()),
-                                        );
-                                      }
-                                      Navigator.pop(context);
-                                    },
-                                    child: const Text("Add"),
-                                  )
-                                ],
-                              ),
-                            );
-                          },
-                        )
-                    ],
-                  ),
-                  sel == null
-                      ? const Text("Select a date")
-                      : _EventList(sel!, cal, uid)
-                ],
-              ),
-            )
-          ],
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Events",
+                      style: TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        if (uid != null)
+                          ElevatedButton.icon(
+                            icon: const Icon(Icons.add),
+                            label: const Text("Add event"),
+                            onPressed: () {
+                              String x = "";
+                              showDialog(
+                                context: context,
+                                builder: (_) =>
+                                    AlertDialog(
+                                      title: const Text("Add Event"),
+                                      content: Padding(
+                                        padding: EdgeInsets.only(
+                                          bottom: MediaQuery
+                                              .of(context)
+                                              .viewInsets
+                                              .bottom,
+                                        ),
+                                        child: TextField(
+                                          autofocus: true,
+                                          onChanged: (v) => x = v,
+                                          decoration: const InputDecoration(
+                                              hintText: "Event title"),
+                                        ),
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context),
+                                          child: const Text("Cancel"),
+                                        ),
+                                        ElevatedButton(
+                                          onPressed: () {
+                                            if (sel != null && x
+                                                .trim()
+                                                .isNotEmpty) {
+                                              context.read<CalendarBloc>().add(
+                                                AddCalendarEvent(
+                                                    uid, sel!, x.trim()),
+                                              );
+                                            }
+                                            Navigator.pop(context);
+                                          },
+                                          child: const Text("Add"),
+                                        )
+                                      ],
+                                    ),
+                              );
+                            },
+                          )
+                      ],
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    sel == null
+                        ? const Text("Select a date")
+                        : _EventList(sel!, cal, uid),
+                  ],
+                ),
+              )
+            ],
+          ),
+          ),
+        ),
+        ),
         );
-      },
+        },
     );
   }
 }
+
 
 class _EventList extends StatelessWidget {
   final DateTime day;
@@ -507,11 +660,7 @@ class _EventList extends StatelessWidget {
                       context: context,
                       builder: (_) => AlertDialog(
                         title: const Text("Edit Event"),
-                        content: TextField(
-                          autofocus: true,
-                          controller: TextEditingController(text: x),
-                          onChanged: (v) => x = v,
-                        ),
+
                         actions: [
                           TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
                           ElevatedButton(

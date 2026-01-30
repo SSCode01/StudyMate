@@ -17,9 +17,8 @@ dependencies {
 
 android {
     namespace = "com.example.studymate"
-    compileSdk = flutter.compileSdkVersion
-
-    // ✅ Force correct NDK version required by Firebase
+    compileSdk = 36
+    buildToolsVersion = "34.0.0"
     ndkVersion = "27.0.12077973"
 
     compileOptions {
@@ -33,7 +32,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.studymate"
-        minSdk = 23
+        minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
